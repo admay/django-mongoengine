@@ -1,10 +1,9 @@
-from django.utils.text import capfirst
-from django.core.validators import RegexValidator
-from django.core.exceptions import ImproperlyConfigured
 from django import forms
+from django.core.exceptions import ImproperlyConfigured
+from django.core.validators import RegexValidator
 from django.db.models import Field
 from django.utils.functional import cached_property
-
+from django.utils.text import capfirst
 from mongoengine import fields
 
 from django_mongoengine.forms import fields as formfields
@@ -42,6 +41,20 @@ class DjangoField(object):
         self._verbose_name = val
 
     verbose_name = property(_get_verbose_name, _set_verbose_name)
+
+    def _get_flatchoices(self):
+        """Flattened version of choices tuple."""
+        if self.choices is None:
+            return []
+        flat = []
+        for choice, value in self.choices:
+            if isinstance(value, (list, tuple)):
+                flat.extend(value)
+            else:
+                flat.append((choice, value))
+        return flat
+
+    flatchoices = property(_get_flatchoices)
 
     def formfield(self, form_class=None, choices_form_class=None, **kwargs):
         """
