@@ -2,15 +2,14 @@ import sys
 import warnings
 
 from django.db.models.fields import FieldDoesNotExist
-from django.utils.text import capfirst
-from django.utils.encoding import smart_text
 from django.db.models.options import Options
+from django.utils.encoding import smart_text
+from django.utils.text import capfirst
 
 try:
     from django.db.models.options import get_verbose_name as camel_case_to_spaces
 except ImportError:
     from django.utils.text import camel_case_to_spaces, format_lazy
-
 
 from mongoengine.fields import ReferenceField
 
@@ -218,6 +217,7 @@ class DocumentMetaWrapper(object):
             if isinstance(f, ReferenceField):
                 document = f.document_type
                 self._field_cache[document._meta.module_name] = (f, document, False, False)
+                self._field_cache[f.name] = (f, None, True, False)
             else:
                 self._field_cache[f.name] = (f, None, True, False)
 

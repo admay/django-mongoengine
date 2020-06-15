@@ -1,5 +1,7 @@
 from functools import partial
 
+from django_mongoengine.mongo_admin.widgets import MongoRelatedFieldWidgetWrapper
+
 try:
     from functools import partialmethod
 except ImportError:
@@ -89,8 +91,8 @@ class BaseDocumentAdmin(djmod.ModelAdmin):
                 can_add_related = bool(
                     related_modeladmin and related_modeladmin.has_add_permission(request)
                 )
-                form_field.widget = widgets.RelatedFieldWidgetWrapper(
-                    form_field.widget, RelationWrapper(db_field.document_type), self.admin_site,
+                form_field.widget = MongoRelatedFieldWidgetWrapper(
+                    form_field.widget, RelationWrapper(db_field.document_type, db_field.name), self.admin_site,
                     can_add_related=can_add_related)
                 return form_field
 
@@ -109,6 +111,7 @@ class BaseDocumentAdmin(djmod.ModelAdmin):
                 return db_field.formfield(**kwargs)
 
         # For any other type of field, just call its formfield() method.
+
         return db_field.formfield(**kwargs)
 
     def formfield_for_choice_field(self, db_field, request=None, **kwargs):

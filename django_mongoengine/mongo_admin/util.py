@@ -1,8 +1,7 @@
-from django.utils.encoding import smart_text, smart_str
-from django.forms.forms import pretty_name
 from django.db.models.fields import FieldDoesNotExist
+from django.forms.forms import pretty_name
 from django.utils import formats
-
+from django.utils.encoding import smart_text, smart_str
 from mongoengine import fields
 
 from django_mongoengine.utils import force_text
@@ -13,9 +12,20 @@ class RelationWrapper(object):
     Wraps a document referenced from a ReferenceField with an Interface similiar to
     django's ForeignKeyField.rel
     """
-    def __init__(self, document):
-        self.to = document
 
+    def __init__(self, document, name):
+        self.to = document
+        self.model = self.to
+        self.through = document
+        self.field_name = name
+
+    def get_related_field(self):
+        """
+        Return the Field in the 'to' object to which this relationship is tied.
+        """
+
+        field = self.model._meta.get_field(self.field_name)
+        return field
 
 def label_for_field(name, model, model_admin=None, return_attr=False):
     attr = None

@@ -1,4 +1,5 @@
 from django import forms
+from django.core import validators
 from django.core.exceptions import ImproperlyConfigured
 from django.core.validators import RegexValidator
 from django.db.models import Field
@@ -19,6 +20,8 @@ _field_defaults = (
 
 class DjangoField(object):
     get_choices = Field.__dict__["get_choices"]
+
+    empty_values = list(validators.EMPTY_VALUES)
 
     def __init__(self, *args, **kwargs):
         for k, v in _field_defaults:
@@ -120,6 +123,23 @@ class DjangoField(object):
 
     def __hash__(self):
         return hash(self.creation_counter)
+
+    def has_default(self):
+        """Return a boolean of whether this field has a default value."""
+        return self.default is not None
+
+    def clean(self, value):
+        """
+        Validate the given value and return its "cleaned" value as an
+        appropriate Python object. Raise ValidationError for any errors.
+        """
+        value = self.to_python(value)
+        self.validate(value)
+        self.run_validators(value)
+        return value
+
+    def run_validators(self, value):
+        pass
 
 
 class StringField(DjangoField):
@@ -268,7 +288,6 @@ class ListField(DjangoField):
         defaults.update(kwargs)
         return super(ListField, self).formfield(**defaults)
 
-
 class FileField(DjangoField):
 
 
@@ -327,3 +346,35 @@ class EmbeddedDocumentField(DjangoField):
         defaults.update(kwargs)
         form = form_class(documentform_factory(self.document_type), **defaults)
         return form
+
+
+class EmbeddedDocumentFieldList(DjangoField):
+
+    def formfield(self, **kwargs):
+        from django_mongoengine.forms.documents import documentform_factory
+        defaults = {
+            'label': self.label,
+            'help_text': self.help_text,
+        }
+        form_class = EmbeddedDocumentField
+        defaults.update(kwargs)
+        form = form_class(documentform_factory(self.document_type), **defaults)
+        return form
+
+    def formfield2(self, **kwargs):
+        if self.field.choices:
+            defaults = {
+                'choices': self.field.choices,
+                'widget': forms.CheckboxSelectMultiple,
+                'form_class': forms.MultipleChoiceField,
+            }
+        elif isinstance(self.field, fields.ReferenceField):
+            defaults = {
+                'form_class': formfields.DocumentMultipleChoiceField,
+                'queryset': self.field.document_type.objects,
+            }
+        else:
+            defaults = {}
+
+        defaults.update(kwargs)
+        return super(ListField, self).formfield(**defaults)

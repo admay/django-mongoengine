@@ -1,21 +1,21 @@
 import operator
+from functools import reduce
 
-from django.core.exceptions import SuspiciousOperation, ImproperlyConfigured
+from django.contrib.admin.options import IncorrectLookupParameters
 from django.contrib.admin.views.main import (
     ChangeList, ORDER_VAR, ALL_VAR, ORDER_TYPE_VAR, SEARCH_VAR, IS_POPUP_VAR,
     TO_FIELD_VAR)
-from django.contrib.admin.options import IncorrectLookupParameters
+from django.core.exceptions import SuspiciousOperation, ImproperlyConfigured
 from django.core.paginator import InvalidPage
 from django.utils.encoding import smart_str
-
 from mongoengine import Q
-from functools import reduce
 
 
 class DocumentChangeList(ChangeList):
     def __init__(self, *args, **kwargs):
         super(DocumentChangeList, self).__init__(*args, **kwargs)
         self.pk_attname = self.lookup_opts.pk_name
+        self.list_select_related = True
 
     def get_results(self, request):
         # query_set has been changed to queryset
